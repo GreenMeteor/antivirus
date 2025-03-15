@@ -1,0 +1,21 @@
+{
+    "id": "antivirus",
+    "version": "1.0.0",
+    "name": "Antivirus",
+    "description": "Antivirus module that allows admins to manually scan files for dangerous extensions, MIME types, and virus signatures to protect your HumHub installation.",
+    "humhub": {
+        "minVersion": "1.16.0"
+    },
+    "keywords": ["antivirus", "security", "file scanning", "virus protection", "malware detection"],
+    "screenshots": ["resources/Screenshot_1.png", "resources/Screenshot_2.png", "resources/Screenshot_3.png", "resources/Screenshot_4.png"],
+    "homepage": "https://greenmeteor.net/",
+    "issues": "https://github.com/GreenMeteor/antivirus/issues",
+    "authors": [
+        {
+            "name": "Green Meteor",
+            "email": "hello@greenmeteor.net",
+            "homepage": "https://greenmeteor.net",
+            "role": "Owner"
+        }
+    ]
+}
