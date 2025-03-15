@@ -1,6 +1,6 @@
 # HumHub Antivirus Module
 
-The **Antivirus Module** is a security module designed to protect your HumHub installation by allowing admins to manually scanning uploaded files for potential threats. It checks files for known dangerous extensions, MIME types, and virus signatures to help safeguard your system from malicious uploads.
+The **Antivirus Module** is a security module designed to protect your HumHub installation by allowing admins to manually scan uploaded files for potential threats. It checks files for known dangerous extensions, MIME types, and virus signatures to help safeguard your system from malicious uploads.
 
 ## Features
 
