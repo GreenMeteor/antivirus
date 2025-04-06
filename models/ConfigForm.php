@@ -4,6 +4,8 @@ namespace humhub\modules\antivirus\models;
 
 use Yii;
 use yii\base\Model;
+use humhub\modules\user\models\User;
+use humhub\modules\antivirus\services\NotificationService;
 
 /**
  * ConfigForm model for antivirus module
@@ -11,12 +13,12 @@ use yii\base\Model;
 class ConfigForm extends Model
 {
     /**
-     * @var array File extensions that are considered potentially dangerous
+     * @var string Comma-separated list of file extensions that are considered potentially dangerous
      */
     public $dangerousExtensions;
 
     /**
-     * @var array MIME types that are considered potentially dangerous
+     * @var string Comma-separated list of MIME types that are considered potentially dangerous
      */
     public $dangerousMimeTypes;
 
@@ -51,6 +53,7 @@ class ConfigForm extends Model
     public function init()
     {
         parent::init();
+        $this->loadSettings();
     }
 
     /**
@@ -147,19 +150,33 @@ class ConfigForm extends Model
     public function loadSettings()
     {
         $module = Yii::$app->getModule('antivirus');
+        $settings = $module->settings;
 
-        $this->dangerousExtensions = is_array($module->dangerousExtensions) ? 
-            implode(',', $module->dangerousExtensions) : '';
+        $this->dangerousExtensions = $settings->get('dangerousExtensions');
+        if (empty($this->dangerousExtensions)) {
+            $this->dangerousExtensions = implode(',', $module->dangerousExtensions);
+        } else {
+            $decoded = json_decode($this->dangerousExtensions, true);
+            if (is_array($decoded)) {
+                $this->dangerousExtensions = implode(',', $decoded);
+            }
+        }
 
-        $this->dangerousMimeTypes = is_array($module->dangerousMimeTypes) ? 
-            implode(',', $module->dangerousMimeTypes) : '';
+        $this->dangerousMimeTypes = $settings->get('dangerousMimeTypes');
+        if (empty($this->dangerousMimeTypes)) {
+            $this->dangerousMimeTypes = implode(',', $module->dangerousMimeTypes);
+        } else {
+            $decoded = json_decode($this->dangerousMimeTypes, true);
+            if (is_array($decoded)) {
+                $this->dangerousMimeTypes = implode(',', $decoded);
+            }
+        }
 
-        $this->maxScanSize = $module->maxScanSize;
-
-        $this->enableScanning = $module->settings->get('enableScanning');
-        $this->enableNotifications = $module->settings->get('enableNotifications');
-        $this->enableAutoDelete = $module->settings->get('enableAutoDelete');
-        $this->enableLogging = $module->settings->get('enableLogging');
+        $this->maxScanSize = $settings->get('maxScanSize', $module->maxScanSize);
+        $this->enableScanning = $settings->get('enableScanning', true);
+        $this->enableNotifications = $settings->get('enableNotifications', true);
+        $this->enableAutoDelete = $settings->get('enableAutoDelete', true);
+        $this->enableLogging = $settings->get('enableLogging', true);
     }
 
     /**
@@ -169,20 +186,27 @@ class ConfigForm extends Model
      */
     public function saveSettings()
     {
+        if (!$this->validate()) {
+            return false;
+        }
+
         $module = Yii::$app->getModule('antivirus');
+        $settings = $module->settings;
 
-        $module->dangerousExtensions = $this->dangerousExtensions ? 
-            array_map('trim', explode(',', $this->dangerousExtensions)) : [];
+        $dangerousExtensions = array_map('trim', explode(',', $this->dangerousExtensions));
+        $dangerousMimeTypes = array_map('trim', explode(',', $this->dangerousMimeTypes));
 
-        $module->dangerousMimeTypes = $this->dangerousMimeTypes ? 
-            array_map('trim', explode(',', $this->dangerousMimeTypes)) : [];
+        $settings->set('dangerousExtensions', json_encode($dangerousExtensions));
+        $settings->set('dangerousMimeTypes', json_encode($dangerousMimeTypes));
+        $settings->set('maxScanSize', $this->maxScanSize);
+        $settings->set('enableScanning', $this->enableScanning);
+        $settings->set('enableNotifications', $this->enableNotifications);
+        $settings->set('enableAutoDelete', $this->enableAutoDelete);
+        $settings->set('enableLogging', $this->enableLogging);
 
+        $module->dangerousExtensions = $dangerousExtensions;
+        $module->dangerousMimeTypes = $dangerousMimeTypes;
         $module->maxScanSize = $this->maxScanSize;
-
-        $module->settings->set('enableScanning', $this->enableScanning);
-        $module->settings->set('enableNotifications', $this->enableNotifications);
-        $module->settings->set('enableAutoDelete', $this->enableAutoDelete);
-        $module->settings->set('enableLogging', $this->enableLogging);
         
         return true;
     }
@@ -207,9 +231,8 @@ class ConfigForm extends Model
         if ($owner && method_exists($owner, 'getCreatedBy')) {
             $user = $owner->getCreatedBy()->one();
 
-            if ($user instanceof \humhub\modules\user\models\User) {
-                \humhub\modules\antivirus\services\NotificationService::sendMaliciousFileDeletedNotification($owner, $file);
-                $this->logWarning("Notification sent to {$user->username} for deleted file: {$file->file_name}");
+            if ($user instanceof User) {
+                NotificationService::sendMaliciousFileDeletedNotification($owner, $file);
             }
         }
     }
